@@ -111,7 +111,7 @@ export const themes: Theme[] = [
 ]
 
 class ThemeManager {
-  private currentTheme: Theme = themes[0]
+  private currentTheme: Theme = themes.find(t => t.id === "netflix") || themes[0]
   private listeners: ((theme: Theme) => void)[] = []
 
   constructor() {
@@ -122,6 +122,9 @@ class ThemeManager {
         if (theme) {
           this.currentTheme = theme
         }
+      } else {
+        // Set Netflix as default if no saved theme
+        this.currentTheme = themes.find(t => t.id === "netflix") || themes[0]
       }
     }
   }
@@ -167,10 +170,10 @@ class ThemeManager {
   applyThemeToVideoPlayer(iframe: HTMLIFrameElement, theme?: Theme) {
     const activeTheme = theme || this.currentTheme
 
-    // Apply border and container styling
-    iframe.style.border = `2px solid ${activeTheme.colors.primary}`
+    // Remove borders and apply clean styling
+    iframe.style.border = "none"
     iframe.style.borderRadius = "8px"
-    iframe.style.boxShadow = `0 0 20px ${activeTheme.colors.primary}33`
+    iframe.style.boxShadow = "none"
 
     // Inject CSS into iframe for comprehensive theming
     try {
@@ -295,6 +298,31 @@ class ThemeManager {
           /* Fullscreen button special styling */
           [class*="fullscreen"] {
             color: ${activeTheme.colors.primary} !important;
+          }
+          
+          /* Hide next/previous navigation elements */
+          [class*="next"],
+          [class*="prev"],
+          [class*="skip"],
+          [class*="forward"],
+          [class*="backward"],
+          .video-js .vjs-next-item,
+          .video-js .vjs-prev-item,
+          .plyr__control--forward,
+          .plyr__control--rewind,
+          .jwplayer .jw-icon-next,
+          .jwplayer .jw-icon-prev,
+          [data-plyr="fast-forward"],
+          [data-plyr="rewind"],
+          [aria-label*="next"],
+          [aria-label*="previous"],
+          [aria-label*="skip"],
+          [title*="next"],
+          [title*="previous"],
+          [title*="skip"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
           }
         </style>
       `

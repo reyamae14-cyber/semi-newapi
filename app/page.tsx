@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Play, Tv, Film, RefreshCw, Search, Star, Calendar, Clock, Globe, Cloud } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { ThemeSelector } from "@/components/theme-selector"
+import { VidoraPlayer } from "@/components/vidora-player"
 
 interface ServerOption {
   name: string
@@ -195,12 +197,47 @@ export default function MovieTVTester() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-balance">Movie & TV Show Tester</h1>
-          <p className="text-muted-foreground text-pretty">
-            Test streaming content using TMDB IDs with multiple server options
-          </p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="text-center flex-1 space-y-2">
+            <h1 className="text-4xl font-bold text-balance">Movie & TV Show Tester</h1>
+            <p className="text-muted-foreground text-pretty">
+              Test streaming content using TMDB IDs with Vidora player integration
+            </p>
+          </div>
+          <ThemeSelector />
         </div>
+
+        {/* Vidora Player Demo Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Play className="w-5 h-5" />
+              Vidora Player Demo (Netflix Theme Default)
+            </CardTitle>
+            <CardDescription>
+              Experience the Vidora player with dynamic theme integration. The player color automatically matches your selected theme.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+             <VidoraPlayer 
+               movieId="299534" 
+               autoplay={false}
+               pausescreen={true}
+               className="h-96"
+             />
+             <div className="mt-4 space-y-2">
+               <p className="text-sm text-muted-foreground">
+                 <strong>Demo:</strong> Avengers Endgame (TMDB ID: 299534) - Try changing themes to see the player color adapt!
+               </p>
+               <div className="flex flex-wrap gap-2">
+                 <Badge variant="outline">✅ Border Removed</Badge>
+                 <Badge variant="outline">✅ Netflix Default Theme</Badge>
+                 <Badge variant="outline">✅ Dynamic Color Integration</Badge>
+                 <Badge variant="outline">✅ Vidora API Connected</Badge>
+               </div>
+             </div>
+           </CardContent>
+        </Card>
 
         <Tabs value={contentType} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-2">

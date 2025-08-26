@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Cloud } from "lucide-react"
+import { RefreshCw, Cloud, Clock } from "lucide-react"
 import { proxyManager } from "@/lib/proxy-manager"
 import { ThemeSelector } from "@/components/theme-selector"
 import { themeManager, type Theme } from "@/lib/theme-manager"
+import { ClientTime, useTimeSync } from "@/components/client-time"
 
 interface ServerOption {
   name: string
@@ -16,18 +17,18 @@ interface ServerOption {
   proxyName?: string
 }
 
-export default function MoviePlayerPage() {
-  const params = useParams()
-  const movieId = params.id as string
-  const [currentUrl, setCurrentUrl] = useState("")
-  const [selectedServer, setSelectedServer] = useState("")
-  const [servers, setServers] = useState<ServerOption[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [fastestProxies, setFastestProxies] = useState<any[]>([])
-  const [currentTheme, setCurrentTheme] = useState(themeManager.getCurrentTheme())
-  const iframeRef = useRef<HTMLIFrameElement>(null)
+interface TMDBMovie {
+  id: number
+  title: string
+  overview: string
+  poster_path: string
+  release_date: string
+  vote_average: number
+  runtime: number
+  genres: { id: number; name: string }[]
+}
 
+export default function MoviePlayerPage() {
   const movieServers: ServerOption[] = [
     { name: "Vidora", url: "https://watch.vidora.su/watch/movie/" },
     { name: "Xprime", url: "https://xprime.tv/watch/" },
@@ -39,13 +40,40 @@ export default function MoviePlayerPage() {
     { name: "Vidify", url: "https://vidify.top/embed/movie/" },
   ]
 
+  const params = useParams()
+  const router = useRouter()
+  const movieId = params.id as string
+  const [currentUrl, setCurrentUrl] = useState("")
+  const [selectedServer, setSelectedServer] = useState("")
+  const [servers, setServers] = useState<ServerOption[]>(movieServers)
+  const [isLoading, setIsLoading] = useState(false)
+  const [movieData, setMovieData] = useState<TMDBMovie | null>(null)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [fastestProxies, setFastestProxies] = useState<any[]>([])  
+  const [proxyMessage, setProxyMessage] = useState<string | null>(null)
+  const TMDB_API_KEY = "39e5d4874c102b0a9b61639c81b9bda1"
+  const [currentTheme, setCurrentTheme] = useState<Theme | null>(null)
+  const [showTimeInfo, setShowTimeInfo] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const { timeZoneInfo, isInitialized: timeInitialized } = useTimeSync()
+
   useEffect(() => {
     if (movieId) {
+      fetchMovieData(movieId)
       initializeProxySystem()
     }
   }, [movieId])
 
+  // Prevent hydration errors by ensuring client-side only rendering
+  const [isMounted, setIsMounted] = useState(false)
   useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    // Initialize theme after component mounts to avoid hydration mismatch
+    setCurrentTheme(themeManager.getCurrentTheme())
+    
     const unsubscribe = themeManager.subscribe((theme) => {
       setCurrentTheme(theme)
       applyThemeToPlayer(theme)
@@ -56,22 +84,41 @@ export default function MoviePlayerPage() {
   const initializeProxySystem = async () => {
     setIsLoading(true)
 
+    // Initialize servers immediately for display
+    setServers(movieServers)
+
     try {
       await proxyManager.detectUserLocation()
       const proxies = await proxyManager.findFastestProxies()
       setFastestProxies(proxies)
 
-      const vidoraServer = movieServers[0]
-      await loadContent(vidoraServer.url, vidoraServer.name, true)
+      const hexaServer = movieServers[2] // Hexa is at index 2
+      await loadContent(hexaServer.url, hexaServer.name, true)
 
-      await refreshPings()
+      // Refresh pings in background without affecting server display
+      refreshPings()
     } catch (error) {
       console.error("[v0] Proxy initialization failed:", error)
-      const vidoraServer = movieServers[0]
-      loadContent(vidoraServer.url, vidoraServer.name, false)
+      const hexaServer = movieServers[2] // Hexa is at index 2
+      loadContent(hexaServer.url, hexaServer.name, false)
+      // Still refresh pings for status display
       refreshPings()
     }
 
+    setIsLoading(false)
+  }
+
+  const fetchMovieData = async (id: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&language=en-US`)
+      if (response.ok) {
+        const data = await response.json()
+        setMovieData(data)
+      }
+    } catch (error) {
+      console.error("Error fetching movie data:", error)
+    }
     setIsLoading(false)
   }
 
@@ -127,8 +174,9 @@ export default function MoviePlayerPage() {
     setIsLoading(false)
   }
 
-  const loadContent = async (serverUrl: string, serverName: string, useProxy = true) => {
+  const loadContent = async (serverUrl: string, serverName: string, useProxy = false) => {
     let fullUrl = ""
+
     if (serverUrl.includes("apimocine.vercel.app")) {
       fullUrl = `${serverUrl}${movieId}`
     } else if (serverUrl.includes("xprime.tv")) {
@@ -137,15 +185,9 @@ export default function MoviePlayerPage() {
       fullUrl = `${serverUrl}${movieId}?autoplay=true`
     }
 
-    if (useProxy) {
-      try {
-        fullUrl = await proxyManager.routeThroughProxy(fullUrl)
-      } catch (error) {
-        console.error("[v0] Proxy routing failed, using direct connection:", error)
-      }
-    }
-
+    // Use direct URL by default, proxy is optional
     setCurrentUrl(fullUrl)
+
     setSelectedServer(serverName)
     setShowDropdown(false)
   }
@@ -172,19 +214,39 @@ export default function MoviePlayerPage() {
     <div className="h-screen w-screen">
       <div className="relative w-full h-full overflow-hidden">
         {currentUrl ? (
-          <iframe
-            ref={iframeRef}
-            src={currentUrl}
-            className="w-full h-full border-none"
-            allowFullScreen
-            sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation"
-            allow="fullscreen; autoplay"
-            style={{
-              border: `2px solid ${currentTheme.colors.primary}`,
-              borderRadius: "8px",
-              boxShadow: `0 0 20px ${currentTheme.colors.primary}33`,
-            }}
-          />
+          <>
+            <iframe
+              ref={iframeRef}
+              src={currentUrl}
+              className="w-full h-full border-none"
+              allowFullScreen
+              sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation"
+              allow="fullscreen; autoplay"
+              style={{
+                border: "none",
+                borderRadius: "0px",
+                boxShadow: "none",
+                outline: "none",
+              }}
+            />
+            {/* Transparent overlay to block back button clicks */}
+            <div 
+              className="absolute top-0 left-0 w-20 h-20 z-30 bg-transparent cursor-default"
+              style={{ pointerEvents: 'auto' }}
+              onClick={(e) => e.preventDefault()}
+            />
+            {/* Additional overlay for common back button positions */}
+            <div 
+              className="absolute top-4 left-4 w-12 h-12 z-30 bg-transparent cursor-default"
+              style={{ pointerEvents: 'auto' }}
+              onClick={(e) => e.preventDefault()}
+            />
+            <div 
+              className="absolute top-2 left-2 w-16 h-16 z-30 bg-transparent cursor-default"
+              style={{ pointerEvents: 'auto' }}
+              onClick={(e) => e.preventDefault()}
+            />
+          </>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">Loading player...</div>
         )}
@@ -202,20 +264,20 @@ export default function MoviePlayerPage() {
 
             {showDropdown && (
               <div className="absolute top-full left-0 mt-2 w-64 bg-black/95 backdrop-blur-sm rounded-lg border border-gray-700 shadow-xl">
-                {fastestProxies.length > 0 && (
-                  <div className="p-3 border-b border-gray-700">
-                    <div className="text-xs text-gray-400 mb-2">Active Proxies:</div>
-                    <div className="flex gap-1 flex-wrap">
-                      {fastestProxies.slice(0, 3).map((proxy, idx) => (
-                        <span key={idx} className="text-xs bg-green-600/20 text-green-400 px-2 py-1 rounded">
-                          {proxy.flag} {proxy.name} ({proxy.ping}ms)
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 <div className="p-2 space-y-1">
+                  {/* Time display at the top */}
+                  {isMounted && (
+                    <div className="px-3 py-2 border-b border-gray-700 mb-2">
+                      <div className="text-xs text-gray-400 mb-1">Server Time</div>
+                      <ClientTime 
+                        format="time" 
+                        className="text-white text-sm font-medium"
+                        showTimezone={false}
+                        showCountry={true}
+                      />
+                    </div>
+                  )}
+                  
                   {servers.map((server, index) => (
                     <button
                       key={index}
@@ -226,7 +288,6 @@ export default function MoviePlayerPage() {
                         <span className="font-medium">{server.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {server.proxyName && <span className="text-xs text-green-400">{server.proxyName}</span>}
                         <span className={`text-xs ${getPingColor(server.ping)}`}>{getPingText(server.ping)}</span>
                       </div>
                     </button>
@@ -244,14 +305,19 @@ export default function MoviePlayerPage() {
                 </div>
               </div>
             )}
+
           </div>
         </div>
 
-        {(selectedServer === "Vidora" || selectedServer === "Hexa") && (
-          <div className="absolute top-6 right-6 z-10">
-            <ThemeSelector onThemeChange={setCurrentTheme} />
+        {/* Proxy Status Message */}
+        {proxyMessage && (
+          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20">
+            <div className="bg-green-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg border border-green-500 shadow-lg">
+              <div className="text-sm font-medium">{proxyMessage}</div>
+            </div>
           </div>
         )}
+
       </div>
     </div>
   )
