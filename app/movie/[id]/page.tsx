@@ -30,21 +30,21 @@ interface TMDBMovie {
 
 export default function MoviePlayerPage() {
   const movieServers: ServerOption[] = [
-    { name: "Vidora", url: "https://watch.vidora.su/watch/movie/" },
-    { name: "Xprime", url: "https://xprime.tv/watch/" },
-    { name: "Hexa", url: "https://hexa.watch/watch/movie/" },
-    { name: "VidSrc", url: "https://vidsrc.cc/v3/embed/movie/" },
-    { name: "Primary", url: "https://apimocine.vercel.app/movie/" },
-    { name: "VidJoy", url: "https://vidjoy.pro/embed/movie/" },
-    { name: "Player VidSrc", url: "https://player.vidsrc.co/embed/movie/" },
-    { name: "Vidify", url: "https://vidify.top/embed/movie/" },
+    { name: "Zeticuz", url: "https://watch.vidora.su/watch/movie/" },
+    { name: "Infested", url: "https://xprime.tv/watch/" },
+    { name: "Spectre", url: "https://hexa.watch/watch/movie/" },
+    { name: "Invictuz", url: "https://vidsrc.cc/v3/embed/movie/" },
+    { name: "Bastardo", url: "https://apimocine.vercel.app/movie/" },
+    { name: "Icarus", url: "https://vidjoy.pro/embed/movie/" },
+    { name: "Orion", url: "https://player.vidsrc.co/embed/movie/" },
+    { name: "Theseus", url: "https://vidify.top/embed/movie/" },
   ]
 
   const params = useParams()
   const router = useRouter()
   const movieId = params.id as string
   const [currentUrl, setCurrentUrl] = useState("")
-  const [selectedServer, setSelectedServer] = useState("")
+  const [selectedServer, setSelectedServer] = useState("Zeticuz")
   const [servers, setServers] = useState<ServerOption[]>(movieServers)
   const [isLoading, setIsLoading] = useState(false)
   const [movieData, setMovieData] = useState<TMDBMovie | null>(null)
@@ -92,15 +92,15 @@ export default function MoviePlayerPage() {
       const proxies = await proxyManager.findFastestProxies()
       setFastestProxies(proxies)
 
-      const hexaServer = movieServers[2] // Hexa is at index 2
-      await loadContent(hexaServer.url, hexaServer.name, true)
+      const zeticuzServer = movieServers[0] // Zeticuz is at index 0
+      await loadContent(zeticuzServer.url, zeticuzServer.name, true)
 
       // Refresh pings in background without affecting server display
       refreshPings()
     } catch (error) {
       console.error("[v0] Proxy initialization failed:", error)
-      const hexaServer = movieServers[2] // Hexa is at index 2
-      loadContent(hexaServer.url, hexaServer.name, false)
+      const zeticuzServer = movieServers[0] // Zeticuz is at index 0
+      loadContent(zeticuzServer.url, zeticuzServer.name, false)
       // Still refresh pings for status display
       refreshPings()
     }
@@ -178,7 +178,7 @@ export default function MoviePlayerPage() {
     let fullUrl = ""
 
     if (serverUrl.includes("apimocine.vercel.app")) {
-      fullUrl = `${serverUrl}${movieId}`
+      fullUrl = `${serverUrl}${movieId}?autoplay=true`
     } else if (serverUrl.includes("xprime.tv")) {
       fullUrl = `${serverUrl}${movieId}?autoplay=true`
     } else {
@@ -229,21 +229,30 @@ export default function MoviePlayerPage() {
                 outline: "none",
               }}
             />
-            {/* Transparent overlay to block back button clicks */}
+            {/* Expanded transparent overlays to prevent accidental back button clicks */}
             <div 
-              className="absolute top-0 left-0 w-20 h-20 z-30 bg-transparent cursor-default"
-              style={{ pointerEvents: 'auto' }}
-              onClick={(e) => e.preventDefault()}
-            />
-            {/* Additional overlay for common back button positions */}
-            <div 
-              className="absolute top-4 left-4 w-12 h-12 z-30 bg-transparent cursor-default"
+              className="absolute top-0 left-0 w-32 h-32 z-30 bg-transparent cursor-default"
               style={{ pointerEvents: 'auto' }}
               onClick={(e) => e.preventDefault()}
             />
             <div 
-              className="absolute top-2 left-2 w-16 h-16 z-30 bg-transparent cursor-default"
-              style={{ pointerEvents: 'auto' }}
+              className="absolute w-28 h-28 z-30 bg-transparent cursor-default"
+              style={{ top: '5px', left: '5px', pointerEvents: 'auto' }}
+              onClick={(e) => e.preventDefault()}
+            />
+            <div 
+              className="absolute w-24 h-24 z-30 bg-transparent cursor-default"
+              style={{ top: '10px', left: '10px', pointerEvents: 'auto' }}
+              onClick={(e) => e.preventDefault()}
+            />
+            <div 
+              className="absolute w-20 h-20 z-30 bg-transparent cursor-default"
+              style={{ top: '15px', left: '15px', pointerEvents: 'auto' }}
+              onClick={(e) => e.preventDefault()}
+            />
+            <div 
+              className="absolute w-16 h-16 z-30 bg-transparent cursor-default"
+              style={{ top: '20px', left: '20px', pointerEvents: 'auto' }}
               onClick={(e) => e.preventDefault()}
             />
           </>

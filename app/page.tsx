@@ -57,25 +57,25 @@ export default function MovieTVTester() {
   const [proxyEnabled, setProxyEnabled] = useState(true)
 
   const movieServers: ServerOption[] = [
-    { name: "Vidora", url: "https://watch.vidora.su/watch/movie/" },
-    { name: "Xprime", url: "https://xprime.tv/watch/" },
-    { name: "Hexa", url: "https://hexa.watch/watch/movie/" },
-    { name: "VidSrc", url: "https://vidsrc.cc/v3/embed/movie/" },
-    { name: "Primary", url: "https://apimocine.vercel.app/movie/" },
-    { name: "VidJoy", url: "https://vidjoy.pro/embed/movie/" },
-    { name: "Player VidSrc", url: "https://player.vidsrc.co/embed/movie/" },
-    { name: "Vidify", url: "https://vidify.top/embed/movie/" },
+    { name: "Zeticuz", url: "https://watch.vidora.su/watch/movie/" },
+    { name: "Infested", url: "https://xprime.tv/watch/" },
+    { name: "Spectre", url: "https://hexa.watch/watch/movie/" },
+    { name: "Invictuz", url: "https://vidsrc.cc/v3/embed/movie/" },
+    { name: "Bastardo", url: "https://apimocine.vercel.app/movie/" },
+    { name: "Icarus", url: "https://vidjoy.pro/embed/movie/" },
+    { name: "Orion", url: "https://player.vidsrc.co/embed/movie/" },
+    { name: "Theseus", url: "https://vidify.top/embed/movie/" },
   ]
 
   const tvServers: ServerOption[] = [
-    { name: "Vidora", url: "https://watch.vidora.su/watch/tv/" },
-    { name: "Xprime", url: "https://xprime.tv/watch/" },
-    { name: "Hexa", url: "https://hexa.watch/watch/tv/" },
-    { name: "VidSrc", url: "https://vidsrc.cc/v3/embed/tv/" },
-    { name: "Primary", url: "https://apimocine.vercel.app/tv/" },
-    { name: "VidJoy", url: "https://vidjoy.pro/embed/tv/" },
-    { name: "Player VidSrc", url: "https://player.vidsrc.co/embed/tv/" },
-    { name: "Vidify", url: "https://vidify.top/embed/tv/" },
+    { name: "Zeticuz", url: "https://watch.vidora.su/watch/tv/" },
+    { name: "Infested", url: "https://xprime.tv/watch/" },
+    { name: "Spectre", url: "https://hexa.watch/watch/tv/" },
+    { name: "Invictuz", url: "https://vidsrc.cc/v3/embed/tv/" },
+    { name: "Bastardo", url: "https://apimocine.vercel.app/tv/" },
+    { name: "Icarus", url: "https://vidjoy.pro/embed/tv/" },
+    { name: "Orion", url: "https://player.vidsrc.co/embed/tv/" },
+    { name: "Theseus", url: "https://vidify.top/embed/tv/" },
   ]
 
   const measurePing = async (url: string): Promise<number | null> => {
